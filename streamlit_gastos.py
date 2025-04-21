@@ -5,25 +5,27 @@ from datetime import datetime
 import os
 
 # --- PIN de acceso ---
-st.title("🔐 Acceso a la App de Gastos")
-pin = st.text_input("Ingresá el PIN para continuar", type="password")
+logo_path = "logo.png"
+col1, col2 = st.columns([1, 10])
+with col1:
+    st.image(logo_path, width=60)
+with col2:
+    st.title("App de Gastos Compartidos")
 
+pin = st.text_input("Ingresá el PIN para continuar", type="password")
 if pin != "4982":
     st.warning("🔒 Ingresá el PIN correcto para acceder.")
     st.stop()
 
-# Archivo CSV donde se guardan los datos
+# Archivo CSV
 ARCHIVO = "gastos_streamlit.csv"
-
-# Cargar datos si existe, si no crear uno nuevo
 if os.path.exists(ARCHIVO):
     gastos = pd.read_csv(ARCHIVO)
 else:
     gastos = pd.DataFrame(columns=["Fecha", "Usuario", "Importe", "Método", "Categoría"])
 
-# --- Sidebar: Registro de gasto ---
+# --- Registro de gasto ---
 st.sidebar.header("📝 Registrar nuevo gasto")
-
 with st.sidebar.form("form_gasto"):
     usuario = st.selectbox("Usuario", ["Matías", "Constanza"])
     importe = st.number_input("Importe del gasto ($)", min_value=0.0, step=10.0)
@@ -43,7 +45,6 @@ with st.sidebar.form("form_gasto"):
             "Categoría": categoria
         }
 
-        # Verificar duplicado
         duplicado = (
             (gastos["Fecha"] == nueva_fila["Fecha"]) &
             (gastos["Usuario"] == nueva_fila["Usuario"]) &
@@ -59,13 +60,22 @@ with st.sidebar.form("form_gasto"):
         gastos.to_csv(ARCHIVO, index=False)
         st.success("✅ Gasto guardado correctamente.")
 
-# --- Main: Dashboard ---
-st.title("📊 Seguimiento de Gastos Compartidos")
-
-if gastos.empty:
-    st.info("No hay gastos cargados todavía.")
+# --- Dashboard y eliminación ---
+st.subheader("📋 Últimos gastos")
+if not gastos.empty:
+    gastos["id"] = gastos.index
+    gasto_a_eliminar = st.selectbox("Seleccioná un gasto para eliminar (ID)", gastos["id"].tolist())
+    if st.button("🗑️ Eliminar gasto seleccionado"):
+        gastos = gastos[gastos["id"] != gasto_a_eliminar]
+        gastos.drop(columns="id", inplace=True)
+        gastos.to_csv(ARCHIVO, index=False)
+        st.success("✅ Gasto eliminado.")
+        st.experimental_rerun()
 else:
-    # Filtros
+    st.info("No hay gastos cargados todavía.")
+
+# --- Estadísticas y gráficos ---
+if not gastos.empty:
     with st.expander("🔍 Filtros"):
         filtro_usuario = st.selectbox("Filtrar por usuario", ["Todos"] + sorted(gastos["Usuario"].unique()))
         filtro_mes = st.selectbox("Filtrar por mes", sorted(gastos["Fecha"].str[:7].unique()))
@@ -75,21 +85,10 @@ else:
         df_filtrado = df_filtrado[df_filtrado["Usuario"] == filtro_usuario]
     df_filtrado = df_filtrado[df_filtrado["Fecha"].str.startswith(filtro_mes)]
 
-    # Mostrar tabla
-    st.subheader("📋 Últimos gastos")
-    st.dataframe(df_filtrado.sort_values("Fecha", ascending=False).reset_index(drop=True))
+    st.subheader("📈 Evolución de gastos")
+    st.dataframe(df_filtrado.sort_values("Fecha", ascending=False))
 
-    # Estadísticas
-    st.subheader("💰 Totales")
-    total = df_filtrado["Importe"].sum()
-    st.metric(label="Total filtrado", value=f"${total:,.2f}")
+    st.metric("💰 Total", f"${df_filtrado['Importe'].sum():,.2f}")
 
-    # Categorías
-    st.subheader("📌 Gastos por categoría")
-    resumen_categoria = df_filtrado.groupby("Categoría")["Importe"].sum()
-    st.bar_chart(resumen_categoria)
-
-    # Evolución diaria
-    st.subheader("📈 Evolución diaria")
-    diario = df_filtrado.groupby("Fecha")["Importe"].sum()
-    st.line_chart(diario)
+    st.bar_chart(df_filtrado.groupby("Categoría")["Importe"].sum())
+    st.line_chart(df_filtrado.groupby("Fecha")["Importe"].sum())
