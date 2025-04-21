@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 import os
 
-
 # --- PIN de acceso ---
 st.title("🔐 Acceso a la App de Gastos")
 pin = st.text_input("Ingresá el PIN para continuar", type="password")
@@ -12,7 +11,6 @@ pin = st.text_input("Ingresá el PIN para continuar", type="password")
 if pin != "4982":
     st.warning("🔒 Ingresá el PIN correcto para acceder.")
     st.stop()
-
 
 # Archivo CSV donde se guardan los datos
 ARCHIVO = "gastos_streamlit.csv"
@@ -44,6 +42,19 @@ with st.sidebar.form("form_gasto"):
             "Método": metodo,
             "Categoría": categoria
         }
+
+        # Verificar duplicado
+        duplicado = (
+            (gastos["Fecha"] == nueva_fila["Fecha"]) &
+            (gastos["Usuario"] == nueva_fila["Usuario"]) &
+            (gastos["Importe"] == nueva_fila["Importe"]) &
+            (gastos["Método"] == nueva_fila["Método"]) &
+            (gastos["Categoría"] == nueva_fila["Categoría"])
+        )
+        if duplicado.any():
+            st.warning("⚠️ Este gasto ya fue registrado hoy. Si querés cargarlo igual, cambiá alguno de los campos.")
+            st.stop()
+
         gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
         gastos.to_csv(ARCHIVO, index=False)
         st.success("✅ Gasto guardado correctamente.")
