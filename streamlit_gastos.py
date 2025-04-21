@@ -4,12 +4,12 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- Mostrar logo desde GitHub ---
+# --- Mostrar logo desde GitHub y título ---
 col1, col2 = st.columns([1, 10])
 with col1:
     st.image("https://raw.githubusercontent.com/cotimorettaarg/app-gastos/main/logo.png", width=60)
 with col2:
-    st.title("App de Gastos Compartidos")
+    st.markdown("## Seguimiento de Gastos Compartidos")
 
 # --- PIN de acceso ---
 pin = st.text_input("Ingresá el PIN para continuar", type="password")
@@ -60,19 +60,19 @@ with st.sidebar.form("form_gasto"):
         gastos.to_csv(ARCHIVO, index=False)
         st.success("✅ Gasto guardado correctamente.")
 
-# --- Dashboard y eliminación ---
-st.subheader("📋 Últimos gastos")
+# --- Eliminar gasto específico ---
+st.subheader("🗑️ Eliminar un gasto")
 if not gastos.empty:
-    gastos["id"] = gastos.index
-    gasto_a_eliminar = st.selectbox("Seleccioná un gasto para eliminar (ID)", gastos["id"].tolist())
-    if st.button("🗑️ Eliminar gasto seleccionado"):
-        gastos = gastos[gastos["id"] != gasto_a_eliminar]
-        gastos.drop(columns="id", inplace=True)
+    gastos["ID"] = gastos.index
+    gasto_seleccionado = st.selectbox("Seleccioná un gasto para eliminar", gastos[["ID", "Fecha", "Usuario", "Importe", "Categoría"]].astype(str).apply(lambda row: " | ".join(row), axis=1).tolist())
+    if st.button("Eliminar gasto seleccionado"):
+        index_a_borrar = int(gasto_seleccionado.split(" | ")[0])
+        gastos.drop(index=index_a_borrar, inplace=True)
         gastos.to_csv(ARCHIVO, index=False)
-        st.success("✅ Gasto eliminado.")
+        st.success("✅ Gasto eliminado correctamente.")
         st.experimental_rerun()
 else:
-    st.info("No hay gastos cargados todavía.")
+    st.info("No hay gastos cargados para eliminar.")
 
 # --- Estadísticas y gráficos ---
 if not gastos.empty:
