@@ -4,6 +4,16 @@ import pandas as pd
 from datetime import datetime
 import os
 
+
+# --- PIN de acceso ---
+st.title("🔐 Acceso a la App de Gastos")
+pin = st.text_input("Ingresá el PIN para continuar", type="password")
+
+if pin != "4982":
+    st.warning("🔒 Ingresá el PIN correcto para acceder.")
+    st.stop()
+
+
 # Archivo CSV donde se guardan los datos
 ARCHIVO = "gastos_streamlit.csv"
 
