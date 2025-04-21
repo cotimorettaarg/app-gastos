@@ -4,14 +4,14 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- PIN de acceso ---
-logo_path = "logo.png"
+# --- Mostrar logo desde GitHub ---
 col1, col2 = st.columns([1, 10])
 with col1:
-    st.image(logo_path, width=60)
+    st.image("https://raw.githubusercontent.com/cotimorettaarg/app-gastos/main/logo.png", width=60)
 with col2:
     st.title("App de Gastos Compartidos")
 
+# --- PIN de acceso ---
 pin = st.text_input("Ingresá el PIN para continuar", type="password")
 if pin != "4982":
     st.warning("🔒 Ingresá el PIN correcto para acceder.")
