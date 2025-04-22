@@ -34,7 +34,7 @@ metodo = st.sidebar.selectbox("Método de pago", ["Efectivo", "Tarjeta", "Mercad
 categoria = st.sidebar.selectbox("Categoría", [
     "Comida", "Amigos", "Regalo", "Regalo mío", "Vitto", "Tenis",
     "Pádel", "Viaje", "Alquiler", "Servicios", "Limpieza", "Educación",
-    "Psicólogo", "Indumentaria", "Zapatillas", "River"
+    "Psicólogo", "Indumentaria", "Zapatillas", "River", "Pilates", "Yoga", "Uber/DiDi", "Gimnasio"
 ])
 
 cuotas = 1
