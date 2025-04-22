@@ -3,8 +3,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+from dateutil.relativedelta import relativedelta
 
-# --- Mostrar logo desde GitHub y título ---
+# --- Logo y título ---
 col1, col2 = st.columns([1, 10])
 with col1:
     st.image("https://raw.githubusercontent.com/cotimorettaarg/app-gastos/main/logo.png", width=60)
@@ -32,33 +33,62 @@ with st.sidebar.form("form_gasto"):
     metodo = st.selectbox("Método de pago", ["Efectivo", "Tarjeta", "Mercado Pago"])
     categoria = st.selectbox("Categoría", [
         "Comida", "Amigos", "Regalo", "Regalo mío", "Vitto", "Tenis",
-        "Pádel", "Viaje", "Alquiler", "Servicios", "Limpieza", "Educación", "Psicólogo"
+        "Pádel", "Viaje", "Alquiler", "Servicios", "Limpieza", "Educación",
+        "Psicólogo", "Indumentaria", "Zapatillas", "River"
     ])
+
+    cuotas = 1
+    mes_inicio = None
+    if metodo == "Tarjeta":
+        cuotas = st.number_input("Cantidad de cuotas", min_value=1, step=1, value=1)
+        mes_inicio = st.text_input("Mes de inicio (formato YYYY-MM):", value=datetime.today().strftime("%Y-%m"))
+
     submit = st.form_submit_button("💾 Guardar")
 
     if submit and importe > 0:
-        nueva_fila = {
-            "Fecha": datetime.today().strftime('%Y-%m-%d'),
-            "Usuario": usuario,
-            "Importe": importe,
-            "Método": metodo,
-            "Categoría": categoria
-        }
+        hoy = datetime.today()
+        if metodo == "Tarjeta" and cuotas > 1 and mes_inicio:
+            try:
+                fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
+                cuota_valor = round(importe / cuotas, 2)
+                for i in range(cuotas):
+                    fecha_cuota = (fecha_inicio + relativedelta(months=i)).strftime("%Y-%m-%d")
+                    nueva_fila = {
+                        "Fecha": fecha_cuota,
+                        "Usuario": usuario,
+                        "Importe": cuota_valor,
+                        "Método": metodo,
+                        "Categoría": categoria
+                    }
+                    gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
+                st.success("✅ Cuotas registradas correctamente.")
+            except:
+                st.error("⚠️ Error en el formato del mes de inicio. Usá YYYY-MM.")
+        else:
+            nueva_fila = {
+                "Fecha": hoy.strftime('%Y-%m-%d'),
+                "Usuario": usuario,
+                "Importe": importe,
+                "Método": metodo,
+                "Categoría": categoria
+            }
 
-        duplicado = (
-            (gastos["Fecha"] == nueva_fila["Fecha"]) &
-            (gastos["Usuario"] == nueva_fila["Usuario"]) &
-            (gastos["Importe"] == nueva_fila["Importe"]) &
-            (gastos["Método"] == nueva_fila["Método"]) &
-            (gastos["Categoría"] == nueva_fila["Categoría"])
-        )
-        if duplicado.any():
-            st.warning("⚠️ Este gasto ya fue registrado hoy. Si querés cargarlo igual, cambiá alguno de los campos.")
-            st.stop()
+            duplicado = (
+                (gastos["Fecha"] == nueva_fila["Fecha"]) &
+                (gastos["Usuario"] == nueva_fila["Usuario"]) &
+                (gastos["Importe"] == nueva_fila["Importe"]) &
+                (gastos["Método"] == nueva_fila["Método"]) &
+                (gastos["Categoría"] == nueva_fila["Categoría"])
+            )
+            if duplicado.any():
+                st.warning("⚠️ Este gasto ya fue registrado hoy. Si querés cargarlo igual, cambiá alguno de los campos.")
+                st.stop()
 
-        gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
+            gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
+            st.success("✅ Gasto guardado correctamente.")
+
         gastos.to_csv(ARCHIVO, index=False)
-        st.success("✅ Gasto guardado correctamente.")
+        st.experimental_rerun()
 
 # --- Eliminar gasto específico ---
 st.subheader("🗑️ Eliminar un gasto")
