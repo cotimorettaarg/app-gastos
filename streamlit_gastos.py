@@ -23,7 +23,7 @@ ARCHIVO = "gastos_streamlit.csv"
 if os.path.exists(ARCHIVO):
     gastos = pd.read_csv(ARCHIVO)
 else:
-    gastos = pd.DataFrame(columns=["Fecha", "Usuario", "Importe", "Método", "Categoría"])
+    gastos = pd.DataFrame(columns=["Fecha", "Usuario", "Importe", "Método", "Categoría", "Tarjeta"])
 
 # --- Registro de gasto ---
 st.sidebar.header("📝 Registrar nuevo gasto")
@@ -39,7 +39,10 @@ categoria = st.sidebar.selectbox("Categoría", [
 
 cuotas = 1
 mes_inicio = None
+tarjeta = ""
+
 if metodo == "Tarjeta":
+    tarjeta = st.sidebar.selectbox("Tarjeta utilizada", ["GGAL-MO", "GGAL-PE", "GGAL-PA", "YOY", "BNA", "BBVA"])
     cuotas = st.sidebar.number_input("Cantidad de cuotas", min_value=1, step=1, value=1)
     hoy = datetime.today()
     meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(12)]
@@ -57,7 +60,8 @@ if st.sidebar.button("💾 Guardar gasto"):
                 "Usuario": usuario,
                 "Importe": cuota_valor,
                 "Método": metodo,
-                "Categoría": categoria
+                "Categoría": categoria,
+                "Tarjeta": tarjeta
             }
             gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
         st.success("✅ Cuotas registradas correctamente.")
@@ -67,7 +71,8 @@ if st.sidebar.button("💾 Guardar gasto"):
             "Usuario": usuario,
             "Importe": importe,
             "Método": metodo,
-            "Categoría": categoria
+            "Categoría": categoria,
+            "Tarjeta": tarjeta if metodo == "Tarjeta" else ""
         }
 
         duplicado = (
@@ -85,7 +90,7 @@ if st.sidebar.button("💾 Guardar gasto"):
         st.success("✅ Gasto guardado correctamente.")
 
     gastos.to_csv(ARCHIVO, index=False)
-    st.experimental_rerun()
+    st.rerun()
 
 # --- Eliminar gasto específico ---
 st.subheader("🗑️ Eliminar un gasto")
@@ -97,7 +102,7 @@ if not gastos.empty:
         gastos.drop(index=index_a_borrar, inplace=True)
         gastos.to_csv(ARCHIVO, index=False)
         st.success("✅ Gasto eliminado correctamente.")
-        st.experimental_rerun()
+        st.rerun()
 else:
     st.info("No hay gastos cargados para eliminar.")
 
@@ -119,3 +124,22 @@ if not gastos.empty:
 
     st.bar_chart(df_filtrado.groupby("Categoría")["Importe"].sum())
     st.line_chart(df_filtrado.groupby("Fecha")["Importe"].sum())
+
+
+
+# --- Cuotas activas por mes ---
+if not gastos.empty:
+    st.subheader("📅 Cuotas activas por mes (solo tarjeta)")
+    df_cuotas = gastos[gastos["Método"] == "Tarjeta"].copy()
+    if not df_cuotas.empty:
+        df_cuotas["Mes"] = df_cuotas["Fecha"].str[:7]
+        resumen = df_cuotas.groupby("Mes").agg(
+            Cuotas_activas=("Importe", "count"),
+            Total_cuotas= ("Importe", "sum")
+        ).reset_index()
+
+        st.dataframe(resumen)
+
+        st.bar_chart(resumen.set_index("Mes")["Total_cuotas"])
+    else:
+        st.info("No hay cuotas activas registradas aún.")
