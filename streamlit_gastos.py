@@ -18,7 +18,7 @@ if pin != "4982":
     st.warning("🔒 Ingresá el PIN correcto para acceder.")
     st.stop()
 
-# Cargar archivo
+# Archivo CSV
 ARCHIVO = "gastos_streamlit.csv"
 if os.path.exists(ARCHIVO):
     gastos = pd.read_csv(ARCHIVO)
@@ -27,67 +27,65 @@ else:
 
 # --- Registro de gasto ---
 st.sidebar.header("📝 Registrar nuevo gasto")
-with st.sidebar.form("form_gasto"):
-    usuario = st.selectbox("Usuario", ["Matías", "Constanza"])
-    importe = st.number_input("Importe del gasto ($)", min_value=0.0, step=10.0)
-    metodo = st.selectbox("Método de pago", ["Efectivo", "Tarjeta", "Mercado Pago"])
-    categoria = st.selectbox("Categoría", [
-        "Comida", "Amigos", "Regalo", "Regalo mío", "Vitto", "Tenis",
-        "Pádel", "Viaje", "Alquiler", "Servicios", "Limpieza", "Educación",
-        "Psicólogo", "Indumentaria", "Zapatillas", "River"
-    ])
 
-    cuotas = 1
-    mes_inicio = None
-    if metodo == "Tarjeta":
-        cuotas = st.number_input("Cantidad de cuotas", min_value=1, step=1, value=1)
-        hoy = datetime.today()
-        meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(12)]
-        mes_inicio = st.selectbox("Mes en que comienza a pagarse:", meses_opciones)
+usuario = st.sidebar.selectbox("Usuario", ["Matías", "Constanza"])
+importe = st.sidebar.number_input("Importe del gasto ($)", min_value=0.0, step=10.0)
+metodo = st.sidebar.selectbox("Método de pago", ["Efectivo", "Tarjeta", "Mercado Pago"])
+categoria = st.sidebar.selectbox("Categoría", [
+    "Comida", "Amigos", "Regalo", "Regalo mío", "Vitto", "Tenis",
+    "Pádel", "Viaje", "Alquiler", "Servicios", "Limpieza", "Educación",
+    "Psicólogo", "Indumentaria", "Zapatillas", "River"
+])
 
-    submit = st.form_submit_button("💾 Guardar")
+cuotas = 1
+mes_inicio = None
+if metodo == "Tarjeta":
+    cuotas = st.sidebar.number_input("Cantidad de cuotas", min_value=1, step=1, value=1)
+    hoy = datetime.today()
+    meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(12)]
+    mes_inicio = st.sidebar.selectbox("Mes en que comienza a pagarse:", meses_opciones)
 
-    if submit and importe > 0:
-        hoy = datetime.today()
-        if metodo == "Tarjeta" and cuotas > 1 and mes_inicio:
-            fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
-            cuota_valor = round(importe / cuotas, 2)
-            for i in range(cuotas):
-                fecha_cuota = (fecha_inicio + relativedelta(months=i)).strftime("%Y-%m-%d")
-                nueva_fila = {
-                    "Fecha": fecha_cuota,
-                    "Usuario": usuario,
-                    "Importe": cuota_valor,
-                    "Método": metodo,
-                    "Categoría": categoria
-                }
-                gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
-            st.success("✅ Cuotas registradas correctamente.")
-        else:
+if st.sidebar.button("💾 Guardar gasto"):
+    hoy = datetime.today()
+    if metodo == "Tarjeta" and cuotas > 1 and mes_inicio:
+        fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
+        cuota_valor = round(importe / cuotas, 2)
+        for i in range(cuotas):
+            fecha_cuota = (fecha_inicio + relativedelta(months=i)).strftime("%Y-%m-%d")
             nueva_fila = {
-                "Fecha": hoy.strftime('%Y-%m-%d'),
+                "Fecha": fecha_cuota,
                 "Usuario": usuario,
-                "Importe": importe,
+                "Importe": cuota_valor,
                 "Método": metodo,
                 "Categoría": categoria
             }
-
-            duplicado = (
-                (gastos["Fecha"] == nueva_fila["Fecha"]) &
-                (gastos["Usuario"] == nueva_fila["Usuario"]) &
-                (gastos["Importe"] == nueva_fila["Importe"]) &
-                (gastos["Método"] == nueva_fila["Método"]) &
-                (gastos["Categoría"] == nueva_fila["Categoría"])
-            )
-            if duplicado.any():
-                st.warning("⚠️ Este gasto ya fue registrado hoy. Si querés cargarlo igual, cambiá alguno de los campos.")
-                st.stop()
-
             gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
-            st.success("✅ Gasto guardado correctamente.")
+        st.success("✅ Cuotas registradas correctamente.")
+    else:
+        nueva_fila = {
+            "Fecha": hoy.strftime('%Y-%m-%d'),
+            "Usuario": usuario,
+            "Importe": importe,
+            "Método": metodo,
+            "Categoría": categoria
+        }
 
-        gastos.to_csv(ARCHIVO, index=False)
-        st.experimental_rerun()
+        duplicado = (
+            (gastos["Fecha"] == nueva_fila["Fecha"]) &
+            (gastos["Usuario"] == nueva_fila["Usuario"]) &
+            (gastos["Importe"] == nueva_fila["Importe"]) &
+            (gastos["Método"] == nueva_fila["Método"]) &
+            (gastos["Categoría"] == nueva_fila["Categoría"])
+        )
+        if duplicado.any():
+            st.warning("⚠️ Este gasto ya fue registrado hoy. Si querés cargarlo igual, cambiá alguno de los campos.")
+            st.stop()
+
+        gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
+        st.success("✅ Gasto guardado correctamente.")
+
+    gastos.to_csv(ARCHIVO, index=False)
+    st.experimental_rerun()
 
 # --- Eliminar gasto específico ---
 st.subheader("🗑️ Eliminar un gasto")
