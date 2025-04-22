@@ -18,7 +18,7 @@ if pin != "4982":
     st.warning("🔒 Ingresá el PIN correcto para acceder.")
     st.stop()
 
-# Archivo CSV
+# Cargar archivo
 ARCHIVO = "gastos_streamlit.csv"
 if os.path.exists(ARCHIVO):
     gastos = pd.read_csv(ARCHIVO)
@@ -41,29 +41,28 @@ with st.sidebar.form("form_gasto"):
     mes_inicio = None
     if metodo == "Tarjeta":
         cuotas = st.number_input("Cantidad de cuotas", min_value=1, step=1, value=1)
-        mes_inicio = st.text_input("Mes de inicio (formato YYYY-MM):", value=datetime.today().strftime("%Y-%m"))
+        hoy = datetime.today()
+        meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(12)]
+        mes_inicio = st.selectbox("Mes en que comienza a pagarse:", meses_opciones)
 
     submit = st.form_submit_button("💾 Guardar")
 
     if submit and importe > 0:
         hoy = datetime.today()
         if metodo == "Tarjeta" and cuotas > 1 and mes_inicio:
-            try:
-                fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
-                cuota_valor = round(importe / cuotas, 2)
-                for i in range(cuotas):
-                    fecha_cuota = (fecha_inicio + relativedelta(months=i)).strftime("%Y-%m-%d")
-                    nueva_fila = {
-                        "Fecha": fecha_cuota,
-                        "Usuario": usuario,
-                        "Importe": cuota_valor,
-                        "Método": metodo,
-                        "Categoría": categoria
-                    }
-                    gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
-                st.success("✅ Cuotas registradas correctamente.")
-            except:
-                st.error("⚠️ Error en el formato del mes de inicio. Usá YYYY-MM.")
+            fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
+            cuota_valor = round(importe / cuotas, 2)
+            for i in range(cuotas):
+                fecha_cuota = (fecha_inicio + relativedelta(months=i)).strftime("%Y-%m-%d")
+                nueva_fila = {
+                    "Fecha": fecha_cuota,
+                    "Usuario": usuario,
+                    "Importe": cuota_valor,
+                    "Método": metodo,
+                    "Categoría": categoria
+                }
+                gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
+            st.success("✅ Cuotas registradas correctamente.")
         else:
             nueva_fila = {
                 "Fecha": hoy.strftime('%Y-%m-%d'),
