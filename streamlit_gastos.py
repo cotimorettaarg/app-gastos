@@ -45,7 +45,7 @@ if metodo == "Tarjeta":
     tarjeta = st.sidebar.selectbox("Tarjeta utilizada", ["GGAL-MO", "GGAL-PE", "GGAL-PA", "YOY", "BNA", "BBVA"])
     cuotas = st.sidebar.number_input("Cantidad de cuotas", min_value=1, step=1, value=1)
     hoy = datetime.today()
-    meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(12)]
+    meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(60)]
     mes_inicio = st.sidebar.selectbox("Mes en que comienza a pagarse:", meses_opciones)
 
 if st.sidebar.button("💾 Guardar gasto"):
@@ -66,8 +66,9 @@ if st.sidebar.button("💾 Guardar gasto"):
             gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
         st.success("✅ Cuotas registradas correctamente.")
     else:
+        fecha_final = fecha_inicio.strftime('%Y-%m-%d') if metodo == "Tarjeta" and mes_inicio else hoy.strftime('%Y-%m-%d')
         nueva_fila = {
-            "Fecha": hoy.strftime('%Y-%m-%d'),
+            "Fecha": fecha_final,
             "Usuario": usuario,
             "Importe": importe,
             "Método": metodo,
