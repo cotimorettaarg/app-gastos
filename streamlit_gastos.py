@@ -40,6 +40,7 @@ categoria = st.sidebar.selectbox("Categoría", [
 cuotas = 1
 mes_inicio = None
 tarjeta = ""
+fecha_inicio = datetime.today()
 
 if metodo == "Tarjeta":
     tarjeta = st.sidebar.selectbox("Tarjeta utilizada", ["GGAL-MO", "GGAL-PE", "GGAL-PA", "YOY", "BNA", "BBVA"])
@@ -47,11 +48,11 @@ if metodo == "Tarjeta":
     hoy = datetime.today()
     meses_opciones = [(hoy + relativedelta(months=i)).strftime("%Y-%m") for i in range(60)]
     mes_inicio = st.sidebar.selectbox("Mes en que comienza a pagarse:", meses_opciones)
+    if mes_inicio:
+        fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
 
 if st.sidebar.button("💾 Guardar gasto"):
-    hoy = datetime.today()
-    if metodo == "Tarjeta" and cuotas > 1 and mes_inicio:
-        fecha_inicio = datetime.strptime(mes_inicio + "-01", "%Y-%m-%d")
+    if metodo == "Tarjeta" and cuotas > 1:
         cuota_valor = round(importe / cuotas, 2)
         for i in range(cuotas):
             fecha_cuota = (fecha_inicio + relativedelta(months=i)).strftime("%Y-%m-%d")
@@ -66,7 +67,7 @@ if st.sidebar.button("💾 Guardar gasto"):
             gastos = pd.concat([gastos, pd.DataFrame([nueva_fila])], ignore_index=True)
         st.success("✅ Cuotas registradas correctamente.")
     else:
-        fecha_final = fecha_inicio.strftime('%Y-%m-%d') if metodo == "Tarjeta" and mes_inicio else hoy.strftime('%Y-%m-%d')
+        fecha_final = fecha_inicio.strftime('%Y-%m-%d') if metodo == "Tarjeta" and mes_inicio else datetime.today().strftime('%Y-%m-%d')
         nueva_fila = {
             "Fecha": fecha_final,
             "Usuario": usuario,
@@ -126,8 +127,6 @@ if not gastos.empty:
     st.bar_chart(df_filtrado.groupby("Categoría")["Importe"].sum())
     st.line_chart(df_filtrado.groupby("Fecha")["Importe"].sum())
 
-
-
 # --- Cuotas activas por mes ---
 if not gastos.empty:
     st.subheader("📅 Cuotas activas por mes (solo tarjeta)")
@@ -140,7 +139,6 @@ if not gastos.empty:
         ).reset_index()
 
         st.dataframe(resumen)
-
         st.bar_chart(resumen.set_index("Mes")["Total_cuotas"])
     else:
         st.info("No hay cuotas activas registradas aún.")
