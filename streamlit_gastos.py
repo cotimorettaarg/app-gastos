@@ -43,7 +43,9 @@ with st.form("registro_gastos"):
     anio_inicio = datetime.now().year
 
     if metodo == "Tarjeta":
-        banco = st.selectbox("Banco emisor", ["Galicia", "Santander", "Macro", "BBVA", "Otro"])
+        banco = st.selectbox("Banco emisor", [
+            "GGAL MATI", "GGAL PATRI", "GGAL MYR", "BBVA", "YOY", "BNA"
+        ])
         cuotas = st.number_input("Cantidad de cuotas", min_value=1, step=1)
         mes_inicio = st.selectbox("Mes de inicio", list(calendar.month_name)[1:], index=datetime.now().month - 1)
         anio_inicio = st.number_input("Año de inicio", min_value=datetime.now().year, value=datetime.now().year)
