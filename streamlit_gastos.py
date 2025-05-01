@@ -31,11 +31,17 @@ persona = st.selectbox("¿Quién hizo el gasto?", ["Constanza", "Matías"])
 monto = st.number_input("Monto total del gasto", min_value=0.0, format="%.2f")
 metodo = st.selectbox("Método de pago", ["Efectivo", "Tarjeta", "Mercado Pago"])
 categoria = st.selectbox("Categoría", [
-    "Comida", "Amigos", "Regalo", "Regalo Mío", "Vitto", "Tenis", "Pádel",
-    "Indumentaria", "Zapatillas", "River", "Pilates", "Yoga", "Uber/Didi", "Gimnasio",
-    "Viaje", "viaje- aéreo", "viaje- ropa", "viaje-hotel", "viaje-transporte",
-    "viaje-comida", "viaje-atracciones"
+    "Comida", "Cena", "Almuerzo", "Merienda", "Desayuno", "Amigos", "Salida",
+    "Regalo", "Regalo Mío", "Vitto", "Tenis", "Pádel", "Indumentaria", "Zapatillas", "River",
+    "Pilates", "Yoga", "Uber/Didi", "Gimnasio", "Viaje", "viaje- aéreo", "viaje- ropa",
+    "viaje-hotel", "viaje-transporte", "viaje-comida", "viaje-atracciones", "Combustible",
+    "Educación", "Artículo limpieza", "Casa- mueble", "Casa-perfumería", "Casa-arreglo",
+    "Herramienta trabajo", "Service auto", "Otro"
 ])
+
+concepto_otro = ""
+if categoria == "Otro":
+    concepto_otro = st.text_input("Ingresá el concepto del gasto")
 
 # Campos adicionales si es tarjeta
 cuotas = 1
@@ -56,6 +62,7 @@ enviar = st.button("Guardar gasto")
 if enviar:
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     gasto_id = str(uuid.uuid4())[:8]
+    categoria_final = concepto_otro if categoria == "Otro" and concepto_otro else categoria
 
     if metodo == "Tarjeta":
         mes_inicio_idx = list(calendar.month_name).index(mes_inicio)
@@ -66,7 +73,7 @@ if enviar:
             anio = anio_inicio + (mes - 1) // 12
             mes_real = (mes - 1) % 12 + 1
             mes_nombre = calendar.month_name[mes_real]
-            fila = [gasto_id, fecha, persona, valor_cuota, metodo, categoria, f"{i+1}/{int(cuotas)}", f"{mes_nombre} {anio}", banco]
+            fila = [gasto_id, fecha, persona, valor_cuota, metodo, categoria_final, f"{i+1}/{int(cuotas)}", f"{mes_nombre} {anio}", banco]
             filas.append(fila)
         try:
             sheet.append_rows(filas)
@@ -76,7 +83,7 @@ if enviar:
     else:
         mes_nombre_actual = calendar.month_name[datetime.now().month]
         anio_actual = datetime.now().year
-        fila = [gasto_id, fecha, persona, monto, metodo, categoria, "-", f"{mes_nombre_actual} {anio_actual}", banco]
+        fila = [gasto_id, fecha, persona, monto, metodo, categoria_final, "-", f"{mes_nombre_actual} {anio_actual}", banco]
         try:
             sheet.append_row(fila)
             st.success(f"✅ Gasto guardado en Google Sheets con ID: `{gasto_id}`")
