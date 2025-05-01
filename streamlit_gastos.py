@@ -36,7 +36,8 @@ categoria = st.selectbox("Categoría", [
     "Pilates", "Yoga", "Uber/Didi", "Gimnasio", "Viaje", "viaje- aéreo", "viaje- ropa",
     "viaje-hotel", "viaje-transporte", "viaje-comida", "viaje-atracciones", "Combustible",
     "Educación", "Artículo limpieza", "Casa- mueble", "Casa-perfumería", "Casa-arreglo",
-    "Herramienta trabajo", "Service auto", "Otro"
+    "Herramienta trabajo", "Service auto", "Farmacia", "Masajista", "Alejandra limpieza",
+    "Psicólogo", "Psicólogo deportivo", "Otro"
 ])
 
 concepto_otro = ""
